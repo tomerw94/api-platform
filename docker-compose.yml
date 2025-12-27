@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: cardgame-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: cardGameDb
+      POSTGRES_USER: cardgame_user
+      POSTGRES_PASSWORD: cardgame_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
