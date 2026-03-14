@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { UserService } from '@/app/modules/User/services/UserService';
+
+const userService = new UserService();
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,17 +12,43 @@ export async function POST(request: NextRequest) {
       action: 'signin'
     });
 
-    // TODO: Implement actual signin logic with services and DAL
+    // Determine auth provider
+    const authProvider = body.googleId ? 'GOOGLE' : 'EMAIL';
+
+    if (!body.email) {
+      return NextResponse.json({
+        error: 'Email is required'
+      }, { status: 400 });
+    }
+
+    if (authProvider === 'EMAIL' && !body.password) {
+      return NextResponse.json({
+        error: 'Password is required for email login'
+      }, { status: 400 });
+    }
+
+    if (authProvider === 'GOOGLE' && !body.googleId) {
+      return NextResponse.json({
+        error: 'Google ID is required for Google login'
+      }, { status: 400 });
+    }
+
+    const result = await userService.signin({
+      email: body.email,
+      password: body.password,
+      googleId: body.googleId,
+      authProvider,
+    });
 
     return NextResponse.json({
-      message: 'Signin logged successfully',
-      success: true
+      message: 'Login successful',
+      user: result.user,
+      token: result.token
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Signin error:', error);
     return NextResponse.json({
-      message: 'Signin failed',
-      success: false
-    }, { status: 500 });
+      error: error.message || 'Invalid credentials'
+    }, { status: 401 });
   }
 }

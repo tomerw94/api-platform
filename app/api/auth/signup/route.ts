@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { UserService } from '@/app/modules/User/services/UserService';
+
+const userService = new UserService();
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,17 +12,45 @@ export async function POST(request: NextRequest) {
       action: 'signup'
     });
 
-    // TODO: Implement actual signup logic with services and DAL
+    // Determine auth provider
+    const authProvider = body.googleId ? 'GOOGLE' : 'EMAIL';
+
+    // Validate required fields
+    if (!body.email) {
+      return NextResponse.json({
+        error: 'Email is required'
+      }, { status: 400 });
+    }
+
+    if (authProvider === 'EMAIL' && !body.password) {
+      return NextResponse.json({
+        error: 'Password is required for email registration'
+      }, { status: 400 });
+    }
+
+    if (authProvider === 'GOOGLE' && !body.googleId) {
+      return NextResponse.json({
+        error: 'Google ID is required for Google registration'
+      }, { status: 400 });
+    }
+
+    const result = await userService.signup({
+      email: body.email,
+      password: body.password,
+      googleId: body.googleId,
+      authProvider,
+      displayname: body.displayname,
+    });
 
     return NextResponse.json({
-      message: 'Signup logged successfully',
-      success: true
+      message: 'User created successfully',
+      user: result.user,
+      token: result.token
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Signup error:', error);
     return NextResponse.json({
-      message: 'Signup failed',
-      success: false
-    }, { status: 500 });
+      error: error.message || 'Internal server error'
+    }, { status: error.message?.includes('already exists') ? 409 : 500 });
   }
 }

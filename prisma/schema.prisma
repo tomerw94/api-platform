@@ -13,12 +13,49 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+}
+
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  email         String   @unique @db.Text
-  password_hash String   @db.Text
-  created_at    DateTime @default(now()) @db.Timestamp(6)
-  updated_at    DateTime @updatedAt @db.Timestamp(6)
-  last_login    DateTime? @db.Timestamp(6)
-  displayname   String?  @db.Text
+  id            String       @id @default(uuid()) @db.Uuid
+  email         String       @unique @db.Text
+  password_hash String?      @db.Text
+  google_id     String?      @unique @db.Text
+  auth_provider AuthProvider @default(EMAIL)
+  created_at    DateTime     @default(now()) @db.Timestamp(6)
+  updated_at    DateTime     @updatedAt @db.Timestamp(6)
+  last_login    DateTime?    @db.Timestamp(6)
+  displayname   String?      @db.Text
+  decks         Deck[]
+}
+
+model Card {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @db.Text
+  power       Int
+  health      Int
+  cost        Int
+  description String?      @db.Text
+  image       String?      @db.Text
+  created_at  DateTime     @default(now())
+  deckCards   CardToDeck[]
+}
+
+model Deck {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @db.Text
+  userId    String      @db.Uuid
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  cards     CardToDeck[]
+}
+
+model CardToDeck {
+  id       String   @id @default(uuid()) @db.Uuid
+  deckId   String   @db.Uuid
+  cardId   String   @db.Uuid
+  deck     Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  card     Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
 }
